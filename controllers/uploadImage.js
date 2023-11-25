@@ -22,7 +22,7 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
         publicId: result.public_id,
       },
     });
-
+    // Save the product document
     await product.save();
     res.json({ message: "Product created successfully", result, product });
   } catch (err) {
@@ -36,19 +36,30 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 router.delete("/delete/:id", async (req, res) => {
   try {
     let public_Id = req.params.id;
-    await cloudinary.uploader.destroy(public_Id, async () => {
-      let product = await Product.findOne({ "image.publicId": public_Id });
-      product.image.url = "null";
-      product.image.publicId = "null";
-      product.save();
+    // Delete image from Cloudinary
+    await cloudinary.uploader.destroy(public_Id);
+
+    // Find product document with matching publicId
+    const product = await Product.findOne({ 'image.publicId': public_Id });
+
+    // Update product document with null URL and publicId
+    if (product) {
+      product.image.url = 'null';
+      product.image.publicId = 'null';
+      await product.save();
       res.json({
         message: "Image deleted successfully and product document updated",
         product,
       });
-    });
-  } catch (error) {
+    }
+    if(!product){
+      res.json({
+        message : 'not found image'
+      })
+    }
+  } catch (err) {
     res.json({
-      error,
+      err,
     });
   }
 });
