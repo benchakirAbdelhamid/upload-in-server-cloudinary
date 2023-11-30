@@ -6,25 +6,33 @@ const upload = require("../middleware/multer");
 // upload image and create data
 router.post("/upload-image", upload.single("image"), async (req, res) => {
   const { path } = req.file;
+  // const InfoImage = req.file
 
-  // res.json({path})
+  // res.json({InfoImage})
 
   try {
-    const result = await cloudinary.uploader.upload(path);
+    if(req.file.size < 600000){
+      const result = await cloudinary.uploader.upload(path);
 
-    const product = new Product({
-      name: req.body.name,
-      description: req.body.description,
-      price: req.body.price,
-      stock: req.body.stock,
-      image: {
-        url: result.secure_url,
-        publicId: result.public_id,
-      },
-    });
-    // Save the product document
-    await product.save();
-    res.json({ message: "Product created successfully", result, product });
+      const product = new Product({
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        stock: req.body.stock,
+        image: {
+          url: result.secure_url,
+          publicId: result.public_id,
+        },
+      });
+      // Save the product document
+      await product.save();
+      res.json({  message: "Product created successfully", result, product });
+    }else if(req.file.size > 600000){
+      res.json({
+        message : 'size > 1MB'
+      })
+    }
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
