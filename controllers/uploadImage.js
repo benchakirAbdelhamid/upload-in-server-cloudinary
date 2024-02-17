@@ -12,7 +12,9 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 
   try {
     if(req.file.size < 600000){
-      const result = await cloudinary.uploader.upload(path);
+      const result = await cloudinary.uploader.upload(path,{
+        folder:'imgExpress'
+      });
 
       const product = new Product({
         name: req.body.name,
@@ -45,10 +47,10 @@ router.delete("/delete/:id", async (req, res) => {
   try {
     let public_Id = req.params.id;
     // Delete image from Cloudinary
-    await cloudinary.uploader.destroy(public_Id);
+    const cloudimg = await cloudinary.uploader.destroy(`imgExpress/${public_Id}`);
 
     // Find product document with matching publicId
-    const product = await Product.findOne({ 'image.publicId': public_Id });
+    const product = await Product.findOne({ 'image.publicId': `imgExpress/${public_Id}` });
 
     // Update product document with null URL and publicId
     if (product) {
@@ -58,11 +60,13 @@ router.delete("/delete/:id", async (req, res) => {
       res.json({
         message: "Image deleted successfully and product document updated",
         product,
+        cloudimg
       });
     }
     if(!product){
       res.json({
-        message : 'not found image'
+        message : 'not found image',
+        cloudimg
       })
     }
   } catch (err) {
